@@ -30,7 +30,8 @@
 
 namespace triton { namespace common {
 
-ThreadPool::ThreadPool(size_t thread_count)
+ThreadPool::ThreadPool(size_t thread_count, size_t max_queue_size) :
+  max_queue_size_(max_queue_size)
 {
   if (!thread_count) {
     throw std::invalid_argument("Thread count must be greater than zero.");
@@ -79,7 +80,7 @@ ThreadPool::~ThreadPool()
   }
 }
 
-void
+bool
 ThreadPool::Enqueue(Task&& task)
 {
   {
@@ -88,11 +89,15 @@ ThreadPool::Enqueue(Task&& task)
     if (stop_) {
       return;
     }
+    if (task_queue_.size() >= max_queue_size_) {
+      return false;
+    }
     task_queue_.push(std::move(task));
   }
   // Only wake one thread per task
   // Todo: DLIS-3859 if ThreadPool gets used more.
   cv_.notify_one();
+  return true;
 }
 
 }}  // namespace triton::common

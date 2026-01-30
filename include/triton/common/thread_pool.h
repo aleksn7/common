@@ -36,7 +36,7 @@ namespace triton { namespace common {
 
 class ThreadPool {
  public:
-  explicit ThreadPool(std::size_t thread_count);
+  explicit ThreadPool(std::size_t thread_count, std::size_t max_queue_size=SIZE_MAX);
   ~ThreadPool();
   ThreadPool(const ThreadPool&) = delete;
   ThreadPool& operator=(const ThreadPool&) = delete;
@@ -44,7 +44,7 @@ class ThreadPool {
   using Task = std::function<void(void)>;
   // Assigns "task" to the task queue for a worker thread to execute when
   // available. This will not track the return value of the task.
-  void Enqueue(Task&& task);
+  bool Enqueue(Task&& task);
 
   // Returns the number of tasks waiting in the queue
   size_t TaskQueueSize()
@@ -58,6 +58,7 @@ class ThreadPool {
 
  private:
   std::queue<Task> task_queue_;
+  std::size_t max_queue_size_;
   std::mutex queue_mtx_;
   std::condition_variable cv_;
   std::vector<std::thread> workers_;
