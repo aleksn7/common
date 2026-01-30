@@ -85,11 +85,8 @@ ThreadPool::Enqueue(Task&& task)
 {
   {
     std::lock_guard<std::mutex> lk(queue_mtx_);
-    // Don't accept more work if pool is shutting down
-    if (stop_) {
-      return;
-    }
-    if (task_queue_.size() >= max_queue_size_) {
+    // Don't accept more work if pool is shutting down or queue is overflowed
+    if (stop_ || task_queue_.size() >= max_queue_size_) {
       return false;
     }
     task_queue_.push(std::move(task));
